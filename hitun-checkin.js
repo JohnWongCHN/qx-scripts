@@ -2,7 +2,7 @@
  * @Author: John Wong
  * @Date: 2022-01-20 11:35:20
  * @LastEditors: John Wong
- * @LastEditTime: 2022-01-21 10:03:27
+ * @LastEditTime: 2022-01-21 10:25:28
  * @FilePath: /qx-scripts/hitun-checkin.js
  * @Desc: hitun.io auto check in
  * @Version: v0.1
@@ -56,37 +56,37 @@ function init() {
     return undefined === this.$task ? false : true;
   };
   const getdata = (key) => {
-    if (isQuanX()) return $prefs.valueForKey(key);
+    if (isQuanX()) return this.$prefs.valueForKey(key);
   };
   const setdata = (key, val) => {
-    if (isQuanX()) return $prefs.setValueForKey(key, val);
+    if (isQuanX()) return this.$prefs.setValueForKey(key, val);
   };
   const notify = (title, subtitle, body) => {
-    if (isQuanX()) $notify(title, subtitle, body);
+    if (isQuanX()) this.$notify(title, subtitle, body);
   };
   const log = (message) => console.log(message);
   const get = (options, callback) => {
     if (isQuanX()) {
       options.method = "GET";
-      $task.fetch(options).then((resp) => callback(null, {}, resp.body));
+      this.$task.fetch(options).then((resp) => callback(null, {}, resp.body));
     }
   };
   const post = (options, callback) => {
     if (isQuanX()) {
       options.method = "POST";
-      $task.fetch(options).then((resp) => callback(null, {}, resp.body));
+      this.$task.fetch(options).then((resp) => callback(null, {}, resp.body));
     }
   };
   const done = (value = {}) => {
-    $done(value);
+    this.$done(value);
   };
   return { isRequest, isQuanX, notify, log, getdata, setdata, get, post, done };
 }
 
 // get hitun.io cookie
 function GetCookie() {
-  const req = $request;
-  if (req.method != "OPTIONS" && req.headers) {
+  const req = this.$request;
+  if (req.headers) {
     const CV = req.headers["Cookie"] || req.headers["cookie"] || "";
     const ckItems = CV.match(/(email|key|ip|uid)=.+?;/g);
     if (/^https:\/\/hitun.io\/auth\/login/.test(req.url)) {
