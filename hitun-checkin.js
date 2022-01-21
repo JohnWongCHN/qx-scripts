@@ -2,7 +2,7 @@
  * @Author: John Wong
  * @Date: 2022-01-20 11:35:20
  * @LastEditors: John Wong
- * @LastEditTime: 2022-01-21 09:28:50
+ * @LastEditTime: 2022-01-21 09:40:24
  * @FilePath: /qx-scripts/hitun-checkin.js
  * @Desc: hitun.io auto check in
  * @Version: v0.1
@@ -89,7 +89,7 @@ function GetCookie() {
     const ckItems = CV.match(/(email|key|ip|uid)=.+?;/g);
     if (/^https:\/\/hitun.io\/auth\/login/.test(req.url)) {
       if (ckItems) {
-        const value = CookieUpdate(null, ckItems.join(""));
+        const value = UpdateCookie(null, ckItems.join(""));
         if (value.type !== -1) {
           const write = hitun.setdata(
             JSON.stringify(value.cookie),
