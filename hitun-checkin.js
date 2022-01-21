@@ -2,13 +2,11 @@
  * @Author: John Wong
  * @Date: 2022-01-20 11:35:20
  * @LastEditors: John Wong
- * @LastEditTime: 2022-01-21 09:21:06
+ * @LastEditTime: 2022-01-21 09:28:50
  * @FilePath: /qx-scripts/hitun-checkin.js
  * @Desc: hitun.io auto check in
  * @Version: v0.1
  */
-
-const { resolve } = require("path/win32");
 
 const hitun = init();
 
@@ -35,8 +33,6 @@ const hitun = init();
         }
       } catch (error) {
         hitun.notify("海豚湾🐬", "每日签到", error.message);
-      } finally {
-        resolve();
       }
     });
   }
