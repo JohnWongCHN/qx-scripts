@@ -2,96 +2,110 @@
  * @Author: John Wong
  * @Date: 2022-01-20 11:35:20
  * @LastEditors: John Wong
- * @LastEditTime: 2022-01-21 10:25:28
+ * @LastEditTime: 2022-01-21 19:05:03
  * @FilePath: /qx-scripts/hitun-checkin.js
  * @Desc: hitun.io auto check in
  * @Version: v0.1
  */
 
+const msg = {};
 const hitun = init();
 
-!(async () => {
+!(async function main() {
   const KEY = hitun.getdata("CookieHitun");
   if (hitun.isRequest) {
-    // get cookie
-    console.log("get cookie");
-    GetCookie();
-  } else if (hitun.isQuanX) {
-    // run task
-    console.log("run task");
-    const HitunURL = {
-      url: "https://hitun.io/user/checkin",
-      headers: {
-        Cookie: KEY,
-      },
-    };
-    hitun.post(HitunURL, function (error, response, data) {
-      try {
-        if (error) {
-          throw new Error(error);
-        } else {
-          const Details = console.log("\n" + JSON.parse(data));
-          console.log(Details);
-        }
-      } catch (error) {
-        hitun.notify("海豚湾🐬", "每日签到", error.message);
-      }
-    });
+    GetCookie(); // 获取用户Cookie
+  } else if (KEY) {
+    await Checkin(KEY); // 用户签到获取流量
+  } else {
+    hitun.notify("海豚湾🐬", "签到失败", "未获取Cookie 🚫");
   }
 })()
   .catch((e) => {
     hitun.notify("海豚🐬签到", "", e.message || JSON.stringify(e));
   })
   .finally(() => {
+    hitun.time();
+    hitun.notify("海豚湾🐬签到", "", msg.msg);
     hitun.done();
   });
 
 // init
 function init() {
   //
-  const isRequest = () => {
-    return undefined === this.$request ? false : true;
+  const start = Date.now();
+  const time = () => {
+    const end = ((Date.now() - start) / 1000).toFixed(2);
+    return console.log("\n签到用时: " + end + " 秒");
   };
-  const isQuanX = () => {
-    return undefined === this.$task ? false : true;
-  };
+  const isRequest = typeof $request != "undefined";
+  const isQuanX = typeof $task != "undefined";
   const getdata = (key) => {
-    if (isQuanX()) return this.$prefs.valueForKey(key);
+    if (isQuanX) return $prefs.valueForKey(key);
   };
   const setdata = (key, val) => {
-    if (isQuanX()) return this.$prefs.setValueForKey(key, val);
+    if (isQuanX) return $prefs.setValueForKey(key, val);
   };
   const notify = (title, subtitle, body) => {
-    if (isQuanX()) this.$notify(title, subtitle, body);
+    if (isQuanX) $notify(title, subtitle, body);
   };
-  const log = (message) => console.log(message);
+  const adapterStatus = (response) => {
+    if (response) {
+      if (response.status) {
+        response["statusCode"] = response.status;
+      } else if (response.statusCode) {
+        response["status"] = response.statusCode;
+      }
+    }
+    return response;
+  };
   const get = (options, callback) => {
-    if (isQuanX()) {
+    if (isQuanX) {
       options.method = "GET";
-      this.$task.fetch(options).then((resp) => callback(null, {}, resp.body));
+      $task.fetch(options).then(
+        (response) => {
+          callback(null, adapterStatus(response), response.body);
+        },
+        (reason) => callback(reason.error, null, null)
+      );
     }
   };
   const post = (options, callback) => {
-    if (isQuanX()) {
+    if (isQuanX) {
       options.method = "POST";
-      this.$task.fetch(options).then((resp) => callback(null, {}, resp.body));
+      $task.fetch(options).then(
+        (response) => {
+          callback(null, adapterStatus(response), response.body);
+        },
+        (reason) => callback(reason.error, null, null)
+      );
     }
   };
   const done = (value = {}) => {
-    this.$done(value);
+    $done(value);
   };
-  return { isRequest, isQuanX, notify, log, getdata, setdata, get, post, done };
+  return {
+    start,
+    isRequest,
+    isQuanX,
+    time,
+    notify,
+    getdata,
+    setdata,
+    get,
+    post,
+    done,
+  };
 }
 
 // get hitun.io cookie
 function GetCookie() {
-  const req = this.$request;
+  const req = $request;
   if (req.headers) {
     const CV = req.headers["Cookie"] || req.headers["cookie"] || "";
-    const ckItems = CV.match(/(email|key|ip|uid)=.+?;/g);
-    if (/^https:\/\/hitun.io\/auth\/login/.test(req.url)) {
-      if (ckItems) {
-        const value = UpdateCookie(null, ckItems.join(""));
+    if (/^https:\/\/hitun.io\/user/.test(req.url)) {
+      if (CV) {
+        const value = UpdateCookie(null, CV);
         if (value.type !== -1) {
           const write = hitun.setdata(
             JSON.stringify(value.cookie),
@@ -122,14 +136,13 @@ function GetCookie() {
 
 // update stored cookie
 function UpdateCookie(oldValue, newValue) {
-  let type, email;
+  let type, email, cookie;
   let ip = (oldValue || newValue || "").split(/ip=(.+?);/)[1];
   let storedCookie = hitun.getdata("CookieHitun");
-  let s_ip = storedCookie.split(/ip=(.+?);/)[1];
-  let cookie = storedCookie;
-  if (ip === s_ip) {
+  if (storedCookie && ip === storedCookie.split(/ip=(.+?);/)[1]) {
     type = -1;
     email = storedCookie.split(/email=(.+?);/)[1];
+    cookie = storedCookie;
   } else {
     type = 1;
     cookie = newValue;
@@ -140,4 +153,38 @@ function UpdateCookie(oldValue, newValue) {
     type: type, // -1: same, 1: update
     email: decodeURIComponent(email),
   };
+}
+
+function Checkin(cookie) {
+  // run task
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      const HitunURL = {
+        url: "https://hitun.io/user/checkin",
+        headers: {
+          Cookie: cookie,
+          Accept: "*/*",
+          "Accept-Encoding": "gzip,deflate,br",
+          "User-Agent":
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.71 Safari/537.36",
+          Connection: "keep-alive",
+        },
+      };
+      hitun.post(HitunURL, function (error, response, data) {
+        try {
+          if (error) {
+            throw new Error(error);
+          } else {
+            const ret = JSON.parse(data);
+            msg.msg = ret.msg;
+            console.log(ret.msg);
+          }
+        } catch (error) {
+          console.log("\n海豚湾🐬签到失败\n" + JSON.stringify(data));
+        } finally {
+          resolve();
+        }
+      });
+    });
+  });
 }
