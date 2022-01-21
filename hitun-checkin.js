@@ -2,7 +2,7 @@
  * @Author: John Wong
  * @Date: 2022-01-20 11:35:20
  * @LastEditors: John Wong
- * @LastEditTime: 2022-01-21 09:40:24
+ * @LastEditTime: 2022-01-21 10:03:27
  * @FilePath: /qx-scripts/hitun-checkin.js
  * @Desc: hitun.io auto check in
  * @Version: v0.1
@@ -11,12 +11,14 @@
 const hitun = init();
 
 !(async () => {
+  const KEY = hitun.getdata("CookieHitun");
   if (hitun.isRequest) {
     // get cookie
+    console.log("get cookie");
     GetCookie();
   } else if (hitun.isQuanX) {
     // run task
-    const KEY = hitun.getdata("CookieHitun");
+    console.log("run task");
     const HitunURL = {
       url: "https://hitun.io/user/checkin",
       headers: {
